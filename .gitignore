@@ -11,3 +11,5 @@ Cache do Python
 
 pycache/
 *.py[cod]
+
+build/

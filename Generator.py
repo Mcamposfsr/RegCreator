@@ -1,4 +1,4 @@
-from utilitarios import para_ascii
+from utilitarios import para_ascii,normalizar_doc
 import random
 from faker import Faker
 
@@ -32,7 +32,7 @@ def gerar_registro_pessoas():
     endereco = para_ascii(faker.city())
     bairro = para_ascii(faker.neighborhood())
     numero = random.randint(1, 100)
-    cpf = faker.cpf()
+    cpf = normalizar_doc(faker.cpf())
 
     valores = (
     "F",

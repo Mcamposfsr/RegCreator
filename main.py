@@ -32,9 +32,6 @@ def gerar_registros(quantidade_registros: int,cursor,conexao):
 
         #Persistência
         conexao.commit()
-        #Finalização
-        cursor.close()
-        conexao.close()
 
         print("Registros gerados!")
     except Exception as E:
@@ -60,18 +57,41 @@ def main():
             
             gerar_ini(fb_dll,db_path,db_user,db_pass) 
 
+    #Verificar nova execução
+    def receber_finalizacao():
+        finalizacao = input("Inserir mais regitros? (S/N):")
+        if finalizacao not in ["S","N","s","n"]:
+            raise Exception("Valor inválido, digite S ou N")
+        #Continuar programa
+        elif finalizacao in ["S","s"]:
+            return False
+        #Finalizar programa
+        elif finalizacao in ["N","n"]:
+            return True
+
+
     # ***** Execucao: *****
 
     print("Bem vindo - Configure a geração:");
-    
+            
     #Conectar ao BD
     input_validado(lambda: receber_configuracao(),'')
     conexao,cursor =  gerar_conexao()
 
-    #Geração de registros
-    quantidade_registros = input_validado(lambda: receber_numero_registros(),'Informe um valor válido!')
-    gerar_registros(quantidade_registros,cursor,conexao)
+    #Controle de execução
+    parar_programa = False
+    while not parar_programa: 
+    
+        #Geração de registros
+        quantidade_registros = input_validado(lambda: receber_numero_registros(),'Informe um valor válido!')
+        gerar_registros(quantidade_registros,cursor,conexao)
 
+        #Verificar nova execucao
+        parar_programa = input_validado(lambda: receber_finalizacao(),'')
+
+    #Finalização
+    cursor.close()
+    conexao.close()
      
 # ------------------------------------------------------------------- CHAMDA -------------------------------------------------------------------
 

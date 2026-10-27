@@ -25,3 +25,11 @@ def input_validado(procedure,txt_erro):
                 print(f"Falha no procedimento, error: {E}")
             #Retornar error passado na chamada
             print(txt_erro)
+
+#Normalizar documentos
+def normalizar_doc(doc):
+    documento_normalizado = ""
+    for char in doc:
+        if char.isdigit():
+            documento_normalizado = documento_normalizado + char
+    return documento_normalizado
