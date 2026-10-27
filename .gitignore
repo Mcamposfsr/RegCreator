@@ -1,0 +1,13 @@
+Arquivos de configuração
+
+*.ini
+
+Ambientes virtuais
+
+.venv/
+venv/
+
+Cache do Python
+
+pycache/
+*.py[cod]
