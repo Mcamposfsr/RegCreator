@@ -1,194 +1,163 @@
-from firebird.driver import connect , driver_config
-from Queries import gerar_query_pessoas,gerar_query_pj,gerar_query_pf,gerar_query_cliente,gerar_query_comp_cliente,gerar_query_contatos
-from utilitarios import input_validado
-from config import gerar_ini,verificar_ini,carregar_ini
-
-#Conexão ao banco
-def gerar_conexao():
-    config_ini = carregar_ini()
-        
-    #Configuração driver FB
-    driver_config.fb_client_library.value = config_ini["dll"]
-    #Conectar
-    conexao = connect(
-        database=config_ini["banco"], 
-        user=config_ini["usuario"],
-        password=config_ini["senha"],
-        charset="UTF8",
-    )
-
-    cursor = conexao.cursor()
-    print("Conexão estabelecida com sucesso!")
-
-    return conexao,cursor
-
-#Geração dos registros
-def gerar_registros_pk(cursor,query,quantidade):
-    for i in range(quantidade):
-        valores,sql = query()
-        cursor.execute(sql,valores)
-
-        #Buscar id
-        resultado = cursor.fetchone()
-        id_pessoa = resultado[0]
-        
-    return id_pessoa
-
-def gerar_registros_pk_parametrizado(cursor,query,quantidade,parametro):
-    for i in range(quantidade):
-        valores,sql = query(parametro)
-        cursor.execute(sql,valores)
-
-        #Buscar id
-        resultado = cursor.fetchone()
-        id_pessoa = resultado[0]            
-    return id_pessoa
-
-
-
-def gerar_registros_fk(cursor,fk,query,quantidade):
-    for i in range(quantidade):
-        valores,sql = query(fk)
-        cursor.execute(sql,valores)
-
-
-
-
-
-
+from src.utilitarios import input_validado
+from src.config import ConfigIni
+from src.conexao import Conexao
+from src.controle import Controle
 
 # ------------------------------------------------------------------- PROGRAMA -------------------------------------------------------------------
-#Execucao do programa
-def main(): 
-    # ***** Preset: *****
+class Main():
+    conexao:Conexao  = None
+    controle:Controle  = None
 
-    #Receber configuração
-    def receber_configuracao():
-        if not verificar_ini():
-            fb_dll = (input("Caminho da dll fbclient x64:\n"))
-            db_path = (input("caminho do banco: \n"))
-            db_user = (input("User: \n"))
-            db_pass = (input("Passworld: \n"))
+    #ENTRADA DA APLICAÇÃO
+    def run_main(self):
+        try:
+            print(" ------------ Bem vindo ------------ ")
+            self.initialize()
+            self.run_pessoas()
+        finally:
+            if self.controle is not None:
+                self.controle.fechar_conexao()
+
+    # INICIALIZAÇÃO DA APLICAÇÃO
+    def initialize(self):
+        #Inicializando componentes
+        self.conexao = Conexao()
+        self.controle = Controle(self.conexao)
+
+        #Configurar conexao
+        if not ConfigIni.verificar_ini():
+            estado_config_inicial = False
+            while not estado_config_inicial:
+                fb_dll = (input("Caminho da dll fbclient x64:\n")).strip()
+                db_path = (input("caminho do banco: \n")).strip()
+                db_user = (input("User: \n")).strip()
+                db_pass = (input("Passworld: \n")).strip()
+
+                estado_config_inicial,error = self.conexao.testar_conexao(fb_dll,db_path,db_user,db_pass)
+                if not estado_config_inicial:
+                    print(f"Falha ao acessar o banco, verifique as credênciais utilizadas! Error:\n {error}")
+                else:
+                    ConfigIni.gerar_ini(fb_dll,db_path,db_user,db_pass)
+
+        #Iniciar conexao
+        estado_conexao = False
+        while not estado_conexao:
+            estado_conexao,error = self.conexao.iniciar_conexao()
+            if not estado_conexao:
+                print(f"Ocorreu uma falha ao tentar se conectar com o banco. \n Error: {error} \n Oque deseja fazer?")
+                print("[1] - Tentar novamente")
+                print("[2] - Configurar conexao novamente")
+                estado_input = False;
+                while not estado_input:
+                    opcao = input("\n")
+                    if opcao not in ["1","2"]:
+                        print("Opção inválida, selecione uma das opções informadas")
+                    else:
+                        estado_input = True;
+                if opcao == "1":
+                    continue
+                elif opcao == "2":
+                    ConfigIni.deletar_ini()
+                    return self.initialize()
+
+    #FLUXO PESSOAS
+    def run_pessoas(self):
+        # ***** Preset: *****
+    
+        #Verifica PF/PJ
+        def receber_info_pessoa():
+            tipo_pessoa = input("Qual o tipo da pessoa dos registros? (PF/PJ):\n").strip().upper()
+            if tipo_pessoa not in ["PF","PJ"]:
+                raise Exception("Valor inválido, digite PF ou PJ")
+            elif tipo_pessoa == "PF":
+                return "F"
+            elif tipo_pessoa == "PJ":
+                return "J"
+    
+        #Verificar se é cliente
+        def receber_info_cliente():
+            eh_cliente = input("Pessoas devem ser clientes? (S/N):\n").strip().upper()
+            if eh_cliente not in ["S","N"]:
+                raise Exception("Valor inválido, digite S ou N")
+            elif eh_cliente == "S":
+                return True
+            elif eh_cliente == "N":
+                return False
+    
+        #Verificar quantidade de contatos
+        def receber_quantidade_contatos():
+            try:
+                quantidade_contatos =  int(input("Quantos contatos cada registro deve ter?\n"))
+            except: 
+                raise Exception("Digite um valor válido!")
+            if quantidade_contatos < 0:
+                raise ValueError("A quantidade não pode ser negativa.")
             
-            gerar_ini(fb_dll,db_path,db_user,db_pass) 
-
-
-    #Verifica PF/PJ
-    def receber_info_pessoa():
-        tipo_pessoa = input("Qual o tipo da pessoa dos registros? (PF/PJ):\n")
-        if tipo_pessoa not in ["pf","PF","Pf","pF","pj","PJ","pJ","Pj"]:
-            raise Exception("Valor inválido, digite PF ou PJ")
-        elif tipo_pessoa in ["pf","PF","Pf","pF"]:
-            return "F"
-        elif tipo_pessoa in ["pj","PJ","pJ","Pj"]:
-            return "J"
-
-    #Verificar se é cliente
-    def receber_info_cliente():
-        eh_cliente = input("Pessoas devem ser clientes? (S/N):\n")
-        if eh_cliente not in ["S","N","s","n"]:
-            raise Exception("Valor inválido, digite S ou N")
-        elif eh_cliente in ["S","s"]:
-            return True
-        elif eh_cliente in ["N","n"]:
-            return False
-
-    #Verificar quantidade de contatos
-    def receber_quantidade_contatos():
-        try:
-            quantidade_contatos =  int(input("Quantos contatos cada registro deve ter?\n"))
-    
             return quantidade_contatos
-        except: 
-            raise Exception("Digite um valor válido!")
-    
-    #Receber quantidade de registros
-    def receber_numero_registros():
-        return int((input("Qual a quantidade de registros você deseja gerar?\n")))
 
-    #Verificar nova execução
-    def receber_finalizacao():
-        finalizacao = input("Inserir mais regitros? (S/N):")
-        if finalizacao not in ["S","N","s","n"]:
-            raise Exception("Valor inválido, digite S ou N")
-        #Continuar programa
-        elif finalizacao in ["S","s"]:
-            return False
-        #Finalizar programa
-        elif finalizacao in ["N","n"]:
-            return True
-       
-
-    # ***** Execucao: ***** -> Melhor tratamento da conexão e passagem da configuração!
-
-    print(" ------------ Bem vindo ------------ ");
-
-    
-    #Conectar ao BD
-    input_validado(lambda: receber_configuracao(),'')
-    conexao,cursor =  gerar_conexao()
-
-    #UI
-    print("Configure a geração:");
-
-    #Verificar tipo pessoa
-    tipo_pessoa = input_validado(lambda: receber_info_pessoa(),'')
-
-    #Verificar se é cliente
-    info_cliente = False
-    if tipo_pessoa == "F":
-        info_cliente = input_validado(lambda: receber_info_cliente(),'') 
-
-    #Verificar quantidade de contatos por pessoa
-    quantidade_contatos = input_validado(lambda: receber_quantidade_contatos(),'')
+            
         
-    #Verificar quantidade registros
-    quantidade_registros = input_validado(lambda: receber_numero_registros(),'Informe um valor válido!') 
-
-    try:
-        try:
-            #Controle de execução
-            parar_programa = False
-            while not parar_programa:
-
-                #Geração de registros
-                for I in range(quantidade_registros):
-                    #Geração do registro PK
-
-                    #Pessoa
-                    id_pessoa = gerar_registros_pk_parametrizado(cursor,gerar_query_pessoas,1,tipo_pessoa)
-                    
-                    #PF/PJ
-                    if tipo_pessoa == "F": 
-                        gerar_registros_fk(cursor,id_pessoa,gerar_query_pf,1)
-                    elif tipo_pessoa == "J": 
-                        gerar_registros_fk(cursor,id_pessoa,gerar_query_pj,1)
-                    
-                    if info_cliente:
-                        gerar_registros_fk(cursor,id_pessoa,gerar_query_cliente,1)
-                        gerar_registros_fk(cursor,id_pessoa,gerar_query_comp_cliente,1)
-
-                    gerar_registros_fk(cursor,id_pessoa,gerar_query_contatos,quantidade_contatos)
-
-                #Persistir dados
-                conexao.commit()
-                print("Registros gerados!")
-
-                #Verificar nova execucao
-                parar_programa = input_validado(lambda: receber_finalizacao(),'')
-
-        except Exception as E:
-            print(f"Falha na criação dos registros. Error:\n {E}")
-            conexao.rollback()
+        #Receber quantidade de registros
+        def receber_numero_registros():
+            quantidade_registros = int((input("Qual a quantidade de registros você deseja gerar?\n")))
+            if quantidade_registros <= 0:
+                raise ValueError("Informe uma quantidade maior que zero.")
+            return quantidade_registros 
     
-    finally:
-        #Finalização
-        cursor.close()
-        conexao.close()
+        #Verificar nova execução
+        def receber_finalizacao():
+            finalizacao = input("Deseja continuar? (S/N):\n").strip().upper()
+            if finalizacao not in ["S","N"]:
+                raise Exception("Valor inválido, digite S ou N")
+            #Continuar programa
+            elif finalizacao == "S":
+                return True
+            #Finalizar programa
+            elif finalizacao == "N":
+                return False
+               
+        
+        # ***** Execucao: ******
+        continuar = True;
+        while continuar:
+            #UI
+            print("###### CONFIGURANDO A GERAÇÃO #####");
+        
+            #Verificar tipo pessoa
+            tipo_pessoa = input_validado(receber_info_pessoa,'')
+        
+            #Verificar se é cliente
+            info_cliente = False
+            if tipo_pessoa == "F":
+                info_cliente = input_validado(receber_info_cliente,'') 
+        
+            #Verificar quantidade de contatos por pessoa
+            quantidade_contatos = input_validado(receber_quantidade_contatos,'')
+                
+            #Verificar quantidade registros
+            quantidade_registros = input_validado(receber_numero_registros,'Informe um valor válido!') 
+
+            print('Gerando registros.....');
+
+            #Execucao:
+            try:
+                self.controle.gerar_pessoas(tipo_pessoa,info_cliente,quantidade_contatos,quantidade_registros)
+                print('Registros gerados com sucesso!')
+            except Exception as E:
+                print(f"Falha na criação dos registros. Error:\n {E}")
+
+            #Verificar repeticao do fluxo
+            continuar = input_validado(receber_finalizacao,'')
 
 # ------------------------------------------------------------------- CHAMDA -------------------------------------------------------------------
+programa = Main()
+#Entrada da aplicação
+programa.run_main()
 
-main()
+
+
+
+
 
 
     

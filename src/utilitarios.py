@@ -23,8 +23,9 @@ def input_validado(procedure,txt_erro):
             #Retornar error padrão
             if txt_erro == '':
                 print(f"Falha no procedimento, error: {E}")
-            #Retornar error passado na chamada
-            print(txt_erro)
+            else:
+                #Retornar error passado na chamada
+                print(txt_erro)
 
 #Normalizar documentos
 def normalizar_doc(doc):
