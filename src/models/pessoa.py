@@ -3,6 +3,7 @@ import random
 from faker import Faker
 from datetime import date
 from ..conexao import Conexao
+from ..random_data import RandomData
 
 faker = Faker("pt_BR")
 
@@ -30,9 +31,11 @@ class ModelPessoas:
             PES_EH_FORNECEDOR,
             PES_EH_REPRESENTANTE,
             PES_EH_TRANSPORTADORA,
-            ROT_CODIGO
+            ROT_CODIGO,
+            PES_PONTO_REF,
+            PES_POVOADO
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING PES_CODIGO
         """
         valores = (
@@ -50,7 +53,9 @@ class ModelPessoas:
         "N",# Fornecedor
         "S",# Representante
         "N",# Transportadora
-        1 #Codigo rota
+        1,#Codigo rota
+        RandomData.buscar_ponto_ref(),# Ponto de referência
+        RandomData.buscar_povoado()# povoado
         )
 
         return self.conexao.executar_query(sql,valores)
