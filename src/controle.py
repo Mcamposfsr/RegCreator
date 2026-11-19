@@ -21,7 +21,6 @@ class Controle:
         if not self.model_dummy_pessoas.select_empresa():
             self.model_dummy_pessoas.insert_empresa()
 
-
         # ROTAS
         if not self.model_dummy_pessoas.select_rotas():
             self.model_dummy_pessoas.insert_rotas()
@@ -37,6 +36,22 @@ class Controle:
         # BOLETOS
         if not self.model_dummy_pessoas.select_boletos():
             self.model_dummy_pessoas.insert_boletos()
+
+        #FIDELIDADE
+        if not self.model_dummy_pessoas.select_fidelidade():
+            self.model_dummy_pessoas.insert_fidelidade()
+
+        #SEGMENTOS
+        if not self.model_dummy_pessoas.select_segmentos():
+            self.model_dummy_pessoas.insert_segmentos()
+
+        #CLASSES
+        if not self.model_dummy_pessoas.select_classes():
+            self.model_dummy_pessoas.insert_classes()
+
+        #VENDEDOR
+        if not self.model_dummy_pessoas.select_vendedores():
+            self.model_dummy_pessoas.insert_vendedores()
 
         
     def gerar_pessoas(self,tipo_pessoa,eh_cliente,quantidade_contatos,quantidade_registros):

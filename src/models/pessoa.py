@@ -171,6 +171,9 @@ class ModelPessoas:
             SIT_CODIGO,
             CNV_CODIGO,
             FID_CODIGO,
+            SEG_CODIGO,
+            CLA_CODIGO,
+            FUN_CODIGO,
             PES_LIMITE_CREDITO,
             PES_DATA_CADASTRO,
             PES_OBSERVACOES,
@@ -179,7 +182,7 @@ class ModelPessoas:
             PES_PALAVRA_CHAVE,
             PES_CNPJ_AUT_XML
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
         # GERANDO VALORES
@@ -188,13 +191,15 @@ class ModelPessoas:
             right_digits=2,
             positive=True
         )
-
         valores = (
             fk_pessoas,                 # FK da tabela PESSOAS
             1,                          # Empresa
             1,                          # Situação
             1,                          # Convênio
             1,                          # Fidelidade
+            1,                          # Segmento
+            1,                          # Classe
+            1,                          # Vendedor
             limite_credito,             # Limite de crédito
             date.today(),              # Data de cadastro
             "Cadastro gerado para teste",  # Observações
